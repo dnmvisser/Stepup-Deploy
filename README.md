@@ -38,6 +38,7 @@ Using the [`create_new_environment.sh`](scripts/create_new_environment.sh) scrip
 The template contains an [`environment.conf`](environments/template/environment.conf) file that specifies the secrets to create. Update this file to match your configuration, likely places to update are marked with "TODO". You can copy the `environments/template` directory to a new location to make your changes. The environment can be used as-is to deploy to VMs created with the scripts in [Stepup-VM](https://github.com/SURFnet/Stepup-VM).
 
 Requirements for running the script:
+
 - *openssl*
 - *python-keyczar*. You can use `pip install python-keyczar` to install this tool. This makes `keyczart` command available.
 
@@ -70,7 +71,7 @@ The (virtual) machine(s) must be running CentOS 7. It is very unlikely that the 
 
 Configure ssh on you deploy host (i.e. the machine on which you will execute ansible-playbook) such that you can connect to machines listed in your inventory and can become root using sudo. Note that you must specify the IP address of the server in the inventory.
 
-Use `ansible-playbook -i <your_environment_directory>/inventory site.yml -e "galera_bootstrap_node=<app>"` to deploy only the application server. Where you replace _<app>_ with the name of the application server in your inventory. You can use the "-l" option to only deploy the app server. I.e.:  `ansible-playbook -i <your_environment_directory>/inventory site.yml -e "galera_bootstrap_node=<app>" -l <app>`
+Use `ansible-playbook -i <your_environment_directory>/inventory site.yml -e "galera_bootstrap_node=<app>"` to deploy only the application server. Where you replace `<app>` with the name of the application server in your inventory. You can use the `-l` option to only deploy the app server. I.e.:  `ansible-playbook -i <your_environment_directory>/inventory site.yml -e "galera_bootstrap_node=<app>" -l <app>`
 
 #### Galera ####
 
@@ -78,37 +79,38 @@ The inventory consists of one database running on the application server. The pl
 
 If you are using the minimal configuration in the inventory from the template, you have one database that is running on the application server. This database is configured as a cluster consisting of one node (you could add more nodes later). In this case the most important difference between a normal mysql/mariaDB and the Galera cluster version is that you ever need to start the database you must use `service mysql bootstrap` instead of `service mysql start`.
 
-### <a name="deploy"></a> [Step 3: Deploy the Stepup components] (id:deploy> ###
+### <a name="deploy"></a> [Step 3: Deploy the Stepup components] (id:deploy) ###
 
 Stepup components are the applications that together make up the Stepup service. These are:
 
 * [Stepup-Middleware](https://github.com/OpenConext/Stepup-Middleware). Is used by the Selfservice component and the RA component. The middleware component is the only component that writes to the database. The other components do not communicate with the middleware. The middleware component maintains the middleware and the gateway databases. Updating the configuration of the Stepup system is performed by sending commands to the middleware. 
 * [Stepup-Gateway](https://github.com/OpenConext/Stepup-Gateway). The gateway reads its configuration from the gateway database. It is a SAML proxy and handles all authentication request in the Stepup system by interacting with external authentication providers (1st factor SAML IdP, Messagebird SMS gateway, Stepup-tiqr or the Yubico Cloud). SAML Service Provides use this gateway for authentication.
-* [Stepup-Selfservice](https://github.com/OpenConext/Stepup-Selfservice). This is the web application where end users register to get stepup token (Yubikey, SMS, tiqr or U2F), can see its status and can revoke their token.
+* [Stepup-Selfservice](https://github.com/OpenConext/Stepup-Selfservice). This is the web application where end users register to get a stepup token (Yubikey, SMS, tiqr or U2F), can see its status and can revoke their token.
 * [Stepup-RA](https://github.com/OpenConext/Stepup-RA). This is the web application where registration authorities (RAs) approve (vet) token registrations.  
 * [Stepup-tiqr](https://github.com/OpenConext/Stepup-tiqr). This is the web application that handles tiqr registration and authentications.
 * [oath-service-php](https://github.com/SURFnet/oath-service-php). This a server for storing the secrets used by tiqr.
 
-Stepup components are deployed on a machine that is previously prepared as described in the previous steps. The playbook used for deploying the stepup components requires a [prebuild](#build) tarball of the component. Prebuild components can be downloaded from the release page of the component on GitHub.
+Stepup components are deployed on a machine that is prepared as described in the previous steps. The playbook used for deploying the stepup components requires a [prebuilt](#build) tarball of the component. Prebuilt components can be downloaded from the release page of the component on GitHub.
  
 The deploy playbook is [`deploy.yml`](deploy.yml). A [`deploy.sh`](scrips/deply.sh) script is provided to use this ansible-playbook to deploy a single component. This script will override the component names in the `deploy.yml` playbook. Usage:
  
-    `scripts/deploy.sh <filename of component tarball> -i <inventory> [-t <tags>] [-l <hosts>] [-v]`
+`scripts/deploy.sh <filename of component tarball> -i <inventory> [-t <tags>] [-l <hosts>] [-v]`
  
-The -i, -t (tags) -l (limit) and -v (verbose) options are passed verbatim to `ansible-playbook`
+The -i, -t (tags) -l (limit) and -v (verbose) options are passed verbatim to `ansible-playbook`.
  
-optionally, to deploy all components in the `deploy.yml` playbook in one go, you can call the playbook directly and provide the path to where the component tarballs are stored. I.e. `ansible-playbook deploy.yml -i <inventory> -e tarball_location=<path to tarball directory on the deply host>'`
+Optionally, to deploy all components in the `deploy.yml` playbook in one go, you can call the playbook directly and provide the path to where the component tarballs are stored. I.e. `ansible-playbook deploy.yml -i <inventory> -e tarball_location=<path to tarball directory on the deploy host>'`
 
 #### [Building Components](id:build) ####
 
 Before a component can be deployed it must be built. This creates a tarball (tar.bz2) that can then be unpacked by the deploy playbook on the application servers. The script to do that is in the [Stepup-Build](https://github.com/OpenConext/Stepup-Build) repository. This script will checkout a component from git on the host, but run composer and create the gzipped tarball to be deployed in a Vagrant VM.
 
-Prebuild components can be downloaded from the release page of the component on GitHub. Make sure to get the prebuild component tar.bz2, and not the source tarball that is automatically created by GitHub. The name of a component has the form `<component-name>-<tag of branch>-<timestamp of last commit>-<git commit SHA1>.tar.bz2`. For example: `Stepup-RA-1.0.2-20150623082722Z-2c4b6389cdbb015ddd470a19f1c04a9feb429032.tar.bz2`
+Prebuilt components can be downloaded from the release page of the component on GitHub. Make sure to get the prebuilt component tar.bz2, and not the source tarball that is automatically created by GitHub. The name of a component has the form `<component-name>-<tag of branch>-<timestamp of last commit>-<git commit SHA1>.tar.bz2`. For example: `Stepup-RA-1.0.2-20150623082722Z-2c4b6389cdbb015ddd470a19f1c04a9feb429032.tar.bz2`
 
 
 ### <a name="postinstall"></a> [Step 4: Post Installation Configuration] (id:postinstall) ###
 
 The fourth and last step is to perform post installation configuration. This consists of:
+
 - Creating database schema's for the applications
 - Writing the configuration to the database
 
