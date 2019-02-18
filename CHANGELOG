@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 Release 17
 
 Install:
@@ -526,4 +524,3 @@ Install:
 * Run DB migrations
   - /root/01-middleware-db_migrate.sh
   - /root/01-gateway-db_migrate.sh
->>>>>>> upstream/develop
